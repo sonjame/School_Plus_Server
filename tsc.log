@@ -1,0 +1,5 @@
+src/controllers/chat.controller.ts(249,1): error TS1127: Invalid character.
+src/routes/chat.routes.ts(41,1): error TS1127: Invalid character.
+src/routes/chat.routes.ts(41,2): error TS1435: Unknown keyword or identifier. Did you mean 'export'?
+src/routes/chat.routes.ts(41,10): error TS1005: 'export' expected.
+src/services/chat.service.ts(235,1): error TS1127: Invalid character.

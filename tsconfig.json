@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    /* Language & Runtime */
+    "target": "ES2021",
+    "lib": [
+      "ES2021"
+    ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    /* Paths */
+    "rootDir": "src",
+    "outDir": "dist",
+    /* Strictness */
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    /* Interop */
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    /* Source Maps */
+    "sourceMap": true,
+    /* Type Definitions */
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "./src/types",
+      "./node_modules/@types"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

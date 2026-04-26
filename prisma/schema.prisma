@@ -1,0 +1,525 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model academic_events {
+  id          Int       @id @default(autoincrement())
+  edu_code    String    @db.VarChar(20)
+  school_code String    @db.VarChar(20)
+  event_date  DateTime  @db.Date
+  title       String    @db.VarChar(255)
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([school_code, event_date, title], map: "uniq_academic")
+}
+
+model calendar_events {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  start_time  DateTime? @db.Time(0)
+  end_time    DateTime? @db.Time(0)
+  color       String?   @db.VarChar(20)
+  event_date  DateTime  @db.Date
+  created_at  DateTime? @default(now()) @db.Timestamp(0)
+  updated_at  DateTime? @default(now()) @db.Timestamp(0)
+
+  @@index([user_id, event_date], map: "idx_user_date")
+}
+
+model comment_likes {
+  id         Int    @id @default(autoincrement())
+  comment_id String @db.VarChar(36)
+  user_id    Int
+
+  @@unique([comment_id, user_id], map: "uniq_comment_user")
+}
+
+model comments {
+  id         String    @id @db.VarChar(36)
+  post_id    String?   @db.VarChar(36)
+  user_id    Int?
+  content    String?   @db.Text
+  parent_id  String?   @db.VarChar(36)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  is_hidden  Boolean   @default(false)
+}
+
+model exam_scores {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  year       Int
+  semester   String    @db.VarChar(10)
+  exam       String    @db.VarChar(20)
+  subject    String    @db.VarChar(50)
+  score      Int
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_exam_scores_user")
+
+  @@unique([user_id, year, exam, subject], map: "uq_exam_score")
+  @@index([user_id, year], map: "idx_user_year")
+}
+
+model meals {
+  id          Int              @id @default(autoincrement())
+  school_code String           @db.VarChar(20)
+  edu_code    String           @db.VarChar(20)
+  meal_date   DateTime         @db.Date
+  meal_type   meals_meal_type? @default(LUNCH)
+  menu        String?          @db.Text
+  created_at  DateTime?        @default(now()) @db.Timestamp(0)
+
+  @@unique([school_code, meal_date, meal_type], map: "uniq_meal")
+}
+
+model mock_exam_scores {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  year       Int
+  grade      Int
+  month      String    @db.VarChar(10)
+  subject    String    @db.VarChar(50)
+  sub_type   String?   @db.VarChar(50)
+  raw_score  Int?
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([user_id, grade, month, subject], map: "uniq_score")
+}
+
+model post_comments {
+  id                  String          @id @db.Char(36)
+  post_id             String          @db.Char(36)
+  user_id             Int
+  author              String          @db.VarChar(50)
+  content             String          @db.Text
+  parent_id           String?         @db.Char(36)
+  likes               Int?            @default(0)
+  created_at          DateTime?       @default(now()) @db.Timestamp(0)
+  parent              String?         @db.VarChar(36)
+  is_hidden           Boolean?        @default(false)
+  school_code         String?         @db.VarChar(20)
+  is_deleted          Int?            @default(0) @db.TinyInt
+  is_reported         Boolean?        @default(false)
+  posts               posts           @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_comments_ibfk_1")
+  post_comments       post_comments?  @relation("post_commentsTopost_comments", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_comments_ibfk_2")
+  other_post_comments post_comments[] @relation("post_commentsTopost_comments")
+
+  @@index([parent_id], map: "parent_id")
+  @@index([post_id], map: "post_id")
+}
+
+model post_images {
+  id        Int    @id @default(autoincrement())
+  post_id   String @db.Char(36)
+  image_url String @db.Text
+  posts     posts  @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_images_ibfk_1")
+
+  @@index([post_id], map: "post_id")
+}
+
+model post_likes {
+  id      Int     @id @default(autoincrement())
+  post_id String? @db.VarChar(36)
+  user_id Int?
+
+  @@unique([post_id, user_id], map: "post_id")
+}
+
+model post_reports {
+  id         Int       @id @default(autoincrement())
+  post_id    String    @db.VarChar(36)
+  user_id    Int
+  type       String    @db.VarChar(50)
+  content    String?   @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([post_id, user_id], map: "uniq_post_report")
+}
+
+model post_scraps {
+  id      Int     @id @default(autoincrement())
+  post_id String? @db.VarChar(36)
+  user_id Int?
+
+  @@unique([post_id, user_id], map: "post_id")
+}
+
+model post_vote_logs {
+  id        Int       @id @default(autoincrement())
+  post_id   String?   @db.Char(36)
+  user_id   String?   @db.VarChar(50)
+  option_id Int?
+  voted_at  DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([post_id, user_id], map: "post_id")
+}
+
+model post_vote_options {
+  id          Int    @id @default(autoincrement())
+  post_id     String @db.Char(36)
+  option_text String @db.VarChar(100)
+  vote_count  Int?   @default(0)
+  posts       posts  @relation(fields: [post_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "post_vote_options_ibfk_1")
+
+  @@index([post_id], map: "post_id")
+}
+
+model post_votes {
+  post_id String    @id @db.VarChar(36)
+  end_at  DateTime? @db.DateTime(0)
+}
+
+model posts {
+  id                String              @id @default(uuid()) @db.Char(36)
+  category          String              @db.VarChar(30)
+  title             String              @db.VarChar(200)
+  content           String              @db.Text
+  likes             Int?                @default(0)
+  created_at        DateTime?           @default(now()) @db.DateTime(0)
+  user_id           BigInt              @db.UnsignedBigInt
+  author            String?             @db.VarChar(50)
+  school_code       String              @db.VarChar(20)
+  images            Json?
+  attachments       Json?
+  is_hidden         Boolean?            @default(false)
+  thumbnail         String?             @db.VarChar(500)
+  is_reported       Boolean?            @default(false)
+  post_comments     post_comments[]
+  post_images       post_images[]
+  post_vote_options post_vote_options[]
+}
+
+model search_history {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  keyword    String    @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_search_history_user")
+
+  @@unique([user_id, keyword], map: "uniq_user_keyword")
+  @@index([created_at], map: "idx_created_at")
+  @@index([user_id], map: "idx_user_id")
+}
+
+model subject_reviews {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  year       Int
+  semester   String    @db.VarChar(10)
+  subject    String    @db.VarChar(50)
+  teacher    String    @db.VarChar(50)
+  school     String    @db.VarChar(100)
+  rating     Int
+  reason     String?   @db.Text
+  user_id    BigInt    @db.UnsignedBigInt
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_subject_reviews_user")
+
+  @@index([school, year, semester], map: "idx_school_year_semester")
+  @@index([subject, teacher], map: "idx_subject_teacher")
+  @@index([user_id], map: "idx_user")
+}
+
+model timetables {
+  id         BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  user_id    BigInt    @db.UnsignedBigInt
+  year       Int
+  semester   String    @db.VarChar(10)
+  day        String    @db.VarChar(5)
+  period     Int
+  subject    String    @db.VarChar(50)
+  teacher    String?   @db.VarChar(50)
+  room       String?   @db.VarChar(50)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+  updated_at DateTime? @default(now()) @db.DateTime(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_timetables_user")
+
+  @@index([user_id], map: "fk_timetables_user")
+}
+
+model users {
+  id                  BigInt                @id @default(autoincrement()) @db.UnsignedBigInt
+  username            String                @unique(map: "users_username_unique") @db.VarChar(20)
+  password            String?               @db.VarChar(255)
+  social_id           String?               @db.VarChar(100)
+  email               String?               @db.VarChar(100)
+  name                String                @db.VarChar(50)
+  school              String                @db.VarChar(100)
+  school_code         String                @db.VarChar(20)
+  edu_code            String                @db.VarChar(20)
+  level               String                @default("user") @db.VarChar(20)
+  grade               String                @db.VarChar(10)
+  created_at          DateTime?             @default(now()) @db.DateTime(0)
+  updated_at          DateTime?             @default(now()) @db.DateTime(0)
+  provider            String                @default("email") @db.VarChar(20)
+  class_num           Int?
+  profile_image_url   String?               @db.VarChar(255)
+  is_banned           Boolean?              @default(false)
+  ban_until           DateTime?             @db.DateTime(0)
+  banned_reason       String?               @db.VarChar(255)
+  banned_at           DateTime?             @db.DateTime(0)
+  banned_until        DateTime?             @db.DateTime(0)
+  ban_reason          String?               @db.VarChar(255)
+  suspended_until     DateTime?             @db.DateTime(0)
+  chat_room_members   chat_room_members[]
+  exam_scores         exam_scores[]
+  search_history      search_history[]
+  subject_reviews     subject_reviews[]
+  timetables          timetables[]
+  user_profile_images user_profile_images[]
+}
+
+model chat_messages {
+  id         BigInt              @id @default(autoincrement()) @db.UnsignedBigInt
+  room_id    Int
+  sender_id  BigInt              @db.UnsignedBigInt
+  type       chat_messages_type?
+  content    String?             @db.Text
+  file_url   String?             @db.Text
+  file_name  String?             @db.VarChar(255)
+  created_at DateTime?           @default(now()) @db.DateTime(0)
+  deleted_by Json?
+  poll_data  Json?
+  post_id    Int?
+  chat_rooms chat_rooms          @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "chat_messages_ibfk_1")
+
+  @@index([room_id], map: "chat_messages_ibfk_1")
+  @@index([sender_id], map: "sender_id")
+}
+
+model chat_polls_votes {
+  id         Int       @id @default(autoincrement())
+  message_id Int
+  user_id    Int
+  option_id  Int
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([message_id, user_id], map: "uniq_vote")
+}
+
+model chat_room_members {
+  room_id              Int
+  user_id              BigInt     @db.UnsignedBigInt
+  joined_at            DateTime?  @default(now()) @db.DateTime(0)
+  last_read_message_id BigInt?
+  last_read_at         DateTime?  @db.DateTime(0)
+  chat_rooms           chat_rooms @relation(fields: [room_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "chat_room_members_ibfk_1")
+  users                users      @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "chat_room_members_ibfk_2")
+
+  @@id([room_id, user_id])
+  @@index([user_id], map: "user_id")
+}
+
+model chat_rooms {
+  id                Int                  @id @default(autoincrement())
+  is_group          Boolean
+  name              String?              @db.VarChar(100)
+  created_at        DateTime?            @default(now()) @db.DateTime(0)
+  created_by        Int
+  room_type         chat_rooms_room_type
+  status            chat_rooms_status?   @default(open)
+  assigned_admin    Int?
+  is_self           Boolean?             @default(false)
+  chat_messages     chat_messages[]
+  chat_room_members chat_room_members[]
+}
+
+model comment_reports {
+  id         BigInt    @id @default(autoincrement())
+  comment_id String    @db.VarChar(36)
+  user_id    BigInt
+  type       String    @db.VarChar(50)
+  content    String?   @db.Text
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([comment_id, user_id], map: "uniq_comment_user")
+}
+
+model refresh_tokens {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  token      String    @db.VarChar(255)
+  expires_at DateTime  @db.DateTime(0)
+  revoked    Boolean?  @default(false)
+  created_at DateTime? @default(now()) @db.DateTime(0)
+}
+
+model user_profile_images {
+  id         Int       @id @default(autoincrement())
+  user_id    BigInt    @db.UnsignedBigInt
+  image_url  String    @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_profile_user")
+
+  @@index([user_id], map: "fk_profile_user")
+}
+
+model chat_room_users {
+  room_id   Int
+  user_id   Int
+  joined_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@id([room_id, user_id])
+  @@index([user_id], map: "idx_user")
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  type       String    @db.VarChar(30)
+  title      String?   @db.VarChar(255)
+  message    String?   @db.Text
+  link       String?   @db.VarChar(255)
+  is_read    Int?      @default(0) @db.TinyInt
+  created_at DateTime? @default(now()) @db.DateTime(0)
+}
+
+model admin_view_logs {
+  id             BigInt    @id @default(autoincrement())
+  admin_id       BigInt?
+  target_user_id BigInt?
+  viewed_type    String?   @db.VarChar(50)
+  created_at     DateTime? @default(now()) @db.DateTime(0)
+}
+
+model blocks {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  blocked_id Int
+  created_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([user_id, blocked_id], map: "uniq_block")
+}
+
+model chat_message_snapshots {
+  id         Int       @id @default(autoincrement())
+  message_id Int?
+  sender_id  Int?
+  content    String?   @db.Text
+  file_url   String?   @db.Text
+  type       String?   @db.VarChar(20)
+  created_at DateTime? @db.DateTime(0)
+  deleted_at DateTime? @default(now()) @db.DateTime(0)
+}
+
+model chat_reports {
+  id               BigInt    @id @default(autoincrement())
+  room_id          BigInt
+  message_id       BigInt
+  reporter_id      BigInt
+  reported_user_id BigInt
+  reason           String    @db.VarChar(255)
+  created_at       DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([message_id, reporter_id], map: "uniq_report")
+  @@unique([message_id, reporter_id], map: "unique_report")
+}
+
+model deleted_users {
+  id                  BigInt                 @id @default(autoincrement())
+  username            String                 @db.VarChar(100)
+  deleted_at          DateTime               @db.DateTime(0)
+  rejoin_available_at DateTime?              @db.DateTime(0)
+  admin_override      Boolean?               @default(false)
+  override_at         DateTime?              @db.DateTime(0)
+  override_by         String?                @db.VarChar(50)
+  provider            String                 @db.VarChar(20)
+  social_id           String?                @db.VarChar(255)
+  ban_type            deleted_users_ban_type @default(temporary)
+  user_id             BigInt?
+  email               String?                @db.VarChar(255)
+  rejoin_requested    Boolean?               @default(false)
+}
+
+model exam_cutoffs {
+  id      Int    @id @default(autoincrement())
+  year    Int
+  grade   Int
+  month   String @db.VarChar(10)
+  subject String @db.VarChar(50)
+  grade1  Int?
+  grade2  Int?
+  grade3  Int?
+  grade4  Int?
+  grade5  Int?
+  grade6  Int?
+  grade7  Int?
+  grade8  Int?
+}
+
+model friends {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  friend_id  Int
+  created_at DateTime? @default(now()) @db.DateTime(0)
+
+  @@unique([user_id, friend_id], map: "uniq_friend")
+}
+
+model timetable_share {
+  id         Int       @id @default(autoincrement())
+  share_id   String?   @unique(map: "share_id") @db.VarChar(50)
+  year       Int?
+  semester   String?   @db.VarChar(10)
+  classes    Json?
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model univ_search_history {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  keyword    String    @db.VarChar(255)
+  created_at DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([user_id, keyword], map: "unique_user_keyword")
+  @@index([keyword], map: "idx_keyword")
+  @@index([user_id], map: "idx_user_id")
+}
+
+model user_ban_history {
+  id           Int       @id @default(autoincrement())
+  user_id      Int
+  admin_id     Int
+  reason       String?   @db.Text
+  banned_until DateTime? @db.DateTime(0)
+  created_at   DateTime? @default(now()) @db.DateTime(0)
+
+  @@index([user_id], map: "user_id")
+}
+
+enum meals_meal_type {
+  LUNCH @map("중식")
+}
+
+enum chat_rooms_status {
+  open
+  in_progress
+  closed
+}
+
+enum chat_messages_type {
+  text
+  image
+  file
+  url
+  notice
+  poll
+  post
+  video
+}
+
+enum chat_rooms_room_type {
+  normal
+  admin
+}
+
+enum deleted_users_ban_type {
+  temporary
+  permanent
+}
