@@ -9,6 +9,15 @@ app.get("/api/users", async (_req, res) => {
   res.json({ ok: true, users });
 });
 
+app.get("/health/db", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, database: "connected" });
+  } catch (error) {
+    res.status(500).json({ ok: false, database: "error" });
+  }
+});
+
 const port = Number(process.env.PORT || 4000);
 
 app.listen(port, "0.0.0.0", () => {
