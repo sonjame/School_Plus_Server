@@ -34,5 +34,15 @@ app.get("/api/users", async (_req, res) => {
   res.json({ ok: true, users });
 });
 
+// ✅ 여기 추가
+app.get("/health/db", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ ok: true, database: "connected" });
+  } catch (error) {
+    res.status(500).json({ ok: false, database: "error" });
+  }
+});
+
 app.use(notFound);
 app.use(errorHandler);
