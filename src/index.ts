@@ -116,6 +116,15 @@ io.on("connection", async (socket) => {
       type: "refresh",
     });
   });
+
+  socket.on("readRoom", (roomId) => {
+    const user = socket.data.user as SocketUser;
+
+    io.to(`room:${roomId}`).emit("roomRead", {
+      roomId: Number(roomId),
+      userId: user.id,
+    });
+  });
 });
 
 /* =========================
