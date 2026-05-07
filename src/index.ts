@@ -109,6 +109,13 @@ io.on("connection", async (socket) => {
       type: savedMessage.type,
     });
   });
+
+  socket.on("refreshRoom", (roomId) => {
+    io.to(`room:${roomId}`).emit("receiveMessage", {
+      roomId: Number(roomId),
+      type: "refresh",
+    });
+  });
 });
 
 /* =========================
