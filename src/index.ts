@@ -77,28 +77,29 @@ io.on("connection", async (socket) => {
     socket.disconnect();
     return;
   }
-
   socket.on("joinRoom", (roomId) => {
-    socket.join(`room:${roomId}`);
+    socket.join(`room:${String(roomId)}`);
   });
 
   socket.on("leaveRoom", (roomId) => {
-    socket.leave(`room:${roomId}`);
+    socket.leave(`room:${String(roomId)}`);
   });
 
   socket.on("sendMessage", async (data) => {
     const user = socket.data.user as SocketUser;
 
+    const roomId = Number(data.roomId);
+
     const savedMessage = await prisma.chat_messages.create({
       data: {
-        room_id: data.roomId,
+        room_id: roomId,
         content: data.content,
         type: data.type,
         sender_id: user.id,
       },
     });
 
-    io.to(`room:${data.roomId}`).emit("receiveMessage", {
+    io.to(`room:${String(roomId)}`).emit("receiveMessage", {
       id: String(savedMessage.id),
       roomId: Number(savedMessage.room_id),
       senderId: Number(savedMessage.sender_id),
@@ -111,7 +112,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("refreshRoom", (roomId) => {
-    io.to(`room:${roomId}`).emit("receiveMessage", {
+    io.to(`room:${String(roomId)}`).emit("receiveMessage", {
       roomId: Number(roomId),
       type: "refresh",
     });
@@ -120,9 +121,9 @@ io.on("connection", async (socket) => {
   socket.on("readRoom", (roomId) => {
     const user = socket.data.user as SocketUser;
 
-    io.to(`room:${roomId}`).emit("roomRead", {
+    io.to(`room:${String(roomId)}`).emit("roomRead", {
       roomId: Number(roomId),
-      userId: user.id,
+      userId: Number(user.id),
     });
   });
 });
