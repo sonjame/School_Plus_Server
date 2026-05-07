@@ -62,13 +62,21 @@ io.on("connection", (socket) => {
         room_id: data.roomId,
         content: data.content,
         type: data.type,
-        sender_id: 1, // 나중에 JWT 로그인 유저로 변경
-        senderName: "테스트",
+        sender_id: 1,
       },
     });
 
     // 🔥 같은 방 사용자들에게 전송
-    io.to(`room:${data.roomId}`).emit("receiveMessage", savedMessage);
+    io.to(`room:${data.roomId}`).emit("receiveMessage", {
+      id: Number(savedMessage.id),
+      roomId: savedMessage.room_id,
+      senderId: savedMessage.sender_id,
+      senderName: "테스트",
+      content: savedMessage.content ?? "",
+      createdAt:
+        savedMessage.created_at?.toISOString() ?? new Date().toISOString(),
+      type: savedMessage.type,
+    });
   });
 });
 
