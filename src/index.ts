@@ -68,9 +68,9 @@ io.on("connection", (socket) => {
 
     // 🔥 같은 방 사용자들에게 전송
     io.to(`room:${data.roomId}`).emit("receiveMessage", {
-      id: Number(savedMessage.id),
-      roomId: savedMessage.room_id,
-      senderId: savedMessage.sender_id,
+      id: String(savedMessage.id),
+      roomId: Number(savedMessage.room_id),
+      senderId: Number(savedMessage.sender_id),
       senderName: "테스트",
       content: savedMessage.content ?? "",
       createdAt:
