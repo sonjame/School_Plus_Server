@@ -1,11 +1,16 @@
 import "dotenv/config";
 import { app } from "./app";
 import { PrismaClient } from "@prisma/client";
-
+import jwt from "jsonwebtoken";
 import http from "http";
 import { Server } from "socket.io";
 
 const prisma = new PrismaClient();
+
+type SocketUser = {
+  id: number;
+  name: string;
+};
 
 /* =========================
    기본 API
@@ -39,39 +44,65 @@ const io = new Server(server, {
   },
 });
 
-io.on("connection", (socket) => {
-  console.log("socket connected");
+io.on("connection", async (socket) => {
+  try {
+    const token = socket.handshake.auth?.token;
 
-  // 채팅방 입장
+    if (!token) {
+      socket.disconnect();
+      return;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      id: number;
+    };
+
+    const user = await prisma.users.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (!user) {
+      socket.disconnect();
+      return;
+    }
+
+    socket.data.user = user;
+
+    console.log("socket connected:", user.name);
+  } catch (error) {
+    socket.disconnect();
+    return;
+  }
+
   socket.on("joinRoom", (roomId) => {
     socket.join(`room:${roomId}`);
   });
 
-  // 채팅방 퇴장
   socket.on("leaveRoom", (roomId) => {
     socket.leave(`room:${roomId}`);
   });
 
-  // 메시지 전송
   socket.on("sendMessage", async (data) => {
-    console.log("message:", data);
+    const user = socket.data.user as SocketUser;
 
-    // 🔥 DB 저장
     const savedMessage = await prisma.chat_messages.create({
       data: {
         room_id: data.roomId,
         content: data.content,
         type: data.type,
-        sender_id: 1,
+        sender_id: user.id,
       },
     });
 
-    // 🔥 같은 방 사용자들에게 전송
     io.to(`room:${data.roomId}`).emit("receiveMessage", {
       id: String(savedMessage.id),
       roomId: Number(savedMessage.room_id),
       senderId: Number(savedMessage.sender_id),
-      senderName: "테스트",
+      senderName: user.name,
       content: savedMessage.content ?? "",
       createdAt:
         savedMessage.created_at?.toISOString() ?? new Date().toISOString(),
