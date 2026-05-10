@@ -191,6 +191,7 @@ model posts {
   is_hidden         Boolean?            @default(false)
   thumbnail         String?             @db.VarChar(500)
   is_reported       Boolean?            @default(false)
+  commentCount      Int?                @default(0)
   post_comments     post_comments[]
   post_images       post_images[]
   post_vote_options post_vote_options[]
@@ -267,6 +268,7 @@ model users {
   banned_until        DateTime?             @db.DateTime(0)
   ban_reason          String?               @db.VarChar(255)
   suspended_until     DateTime?             @db.DateTime(0)
+  expo_push_token     String?               @db.VarChar(255)
   chat_room_members   chat_room_members[]
   exam_scores         exam_scores[]
   search_history      search_history[]
@@ -460,6 +462,15 @@ model friends {
   created_at DateTime? @default(now()) @db.DateTime(0)
 
   @@unique([user_id, friend_id], map: "uniq_friend")
+}
+
+model push_tokens {
+  id              Int       @id @default(autoincrement())
+  user_id         Int
+  expo_push_token String    @db.VarChar(255)
+  created_at      DateTime? @default(now()) @db.Timestamp(0)
+
+  @@unique([user_id, expo_push_token], map: "unique_user_token")
 }
 
 model timetable_share {
